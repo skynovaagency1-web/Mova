@@ -91,8 +91,8 @@ const sections: Section[] = [
           double authentification.
         </li>
         <li>
-          <strong>Nos prestataires</strong>, qui traitent les données pour notre compte : Supabase (base de données, serveurs dans l'UE), GitHub
-          et Cloudflare (hébergement du site), IGN Géoplateforme (recherche d'adresse), Apple Plans ou Google Maps (affichage de la carte dans
+          <strong>Nos prestataires</strong>, qui traitent les données pour notre compte : Cloudflare (hébergement du site, de l'application et
+          des données, base en Europe de l'Ouest), IGN Géoplateforme (recherche d'adresse), Apple Plans ou Google Maps (affichage de la carte dans
           l'app), Wikimedia (photos de lieux). Certains sont établis aux États-Unis ; les transferts sont encadrés par le cadre de protection des
           données UE–États-Unis ou par des clauses contractuelles types.
         </li>
@@ -145,6 +145,10 @@ const sections: Section[] = [
           Vous pouvez accéder à vos données, les rectifier, les supprimer, en demander une copie (portabilité), vous opposer à un traitement ou
           en limiter l'usage, et retirer votre consentement à tout moment. Écrivez à <Field value={COMPANY.email} label="e-mail de contact" /> ;
           nous répondons sous un mois.
+        </p>
+        <p>
+          Vous pouvez aussi supprimer votre compte vous-même dans l'application : <em>Compte → Supprimer mon compte</em>. Votre compte, vos
+          courses et, pour les chauffeurs, votre photo sont alors effacés immédiatement.
         </p>
         <p>
           Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noreferrer">cnil.fr</a>).

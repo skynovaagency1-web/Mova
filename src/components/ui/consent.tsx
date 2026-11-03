@@ -8,7 +8,7 @@ export function ConsentCheckbox({ id }: { id: string }) {
       <span>
         J'accepte que MOVA conserve ces informations pour me contacter au sujet du lancement à Besançon. Je peux demander
         leur suppression à tout moment.{" "}
-        <a href="./confidentialite.html" className="underline underline-offset-2 hover:text-foreground">
+        <a href="/confidentialite.html" className="underline underline-offset-2 hover:text-foreground">
           Confidentialité
         </a>
       </span>

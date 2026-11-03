@@ -1,54 +1,71 @@
 import * as React from "react";
-import type { Session } from "@supabase/supabase-js";
+import QRCode from "qrcode";
 import { Loader2, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/consent";
-import { ARRIVED_FROM_EMAIL_LINK, supabase } from "@/ops/supabase";
+import { ApiError, ops, session, type Me } from "@/ops/client";
+import { api } from "@/lib/api";
 import { Console } from "@/ops/console";
 
 // Access flow: password → second factor (TOTP app) → staff check → console.
-// The database enforces the same rules (aal2 + mova_staff row), so the UI is only a guide.
+// The Worker enforces the same rules on every call (staff row + 2-step code), so the UI is only a guide.
 type Gate =
   | { step: "loading" }
+  | { step: "setup" }
   | { step: "signed-out" }
   | { step: "enroll" }
-  | { step: "verify"; factorId: string }
+  | { step: "verify" }
   | { step: "not-staff" }
-  | { step: "set-password" }
+  | { step: "link"; token: string }
   | { step: "ready" };
 
-export default function OpsApp() {
-  const [session, setSession] = React.useState<Session | null>(null);
-  const [gate, setGate] = React.useState<Gate>({ step: "loading" });
-  const needsPassword = React.useRef(ARRIVED_FROM_EMAIL_LINK);
+// Invitation and reset links end in #token=…: read it once, then clear it from the address bar.
+function linkToken() {
+  const m = window.location.hash.match(/token=([A-Za-z0-9_-]+)/);
+  if (m) history.replaceState(null, "", window.location.pathname + window.location.search);
+  return m?.[1] ?? null;
+}
 
-  const evaluate = React.useCallback(async (s: Session | null) => {
-    setSession(s);
-    if (!s) return setGate({ step: "signed-out" });
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal?.currentLevel !== "aal2") {
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const totp = factors?.totp.find((f) => f.status === "verified");
-      return setGate(totp ? { step: "verify", factorId: totp.id } : { step: "enroll" });
+export default function OpsApp() {
+  const [me, setMe] = React.useState<Me | null>(null);
+  const [gate, setGate] = React.useState<Gate>({ step: "loading" });
+
+  const evaluate = React.useCallback(async () => {
+    if (!session.get()) {
+      const setup = await api<{ needed: boolean }>("/setup").catch(() => ({ needed: false }));
+      return setGate({ step: setup.needed ? "setup" : "signed-out" });
     }
-    const { data: staff } = await supabase.from("mova_staff").select("user_id").eq("user_id", s.user.id).maybeSingle();
-    if (!staff) return setGate({ step: "not-staff" });
-    setGate(needsPassword.current ? { step: "set-password" } : { step: "ready" });
+    try {
+      const m = await ops<Me>("/auth/me");
+      setMe(m);
+      if (!m.staff) return setGate({ step: "not-staff" });
+      if (!m.aal2) return setGate({ step: m.mfa_enrolled ? "verify" : "enroll" });
+      setGate({ step: "ready" });
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) session.set(null);
+      setGate({ step: "signed-out" });
+    }
   }, []);
 
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => evaluate(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      if (event === "SIGNED_OUT") evaluate(null);
-      if (event === "PASSWORD_RECOVERY") needsPassword.current = true;
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "MFA_CHALLENGE_VERIFIED") evaluate(s);
-    });
-    return () => sub.subscription.unsubscribe();
+    const t = linkToken();
+    if (t) setGate({ step: "link", token: t });
+    else evaluate();
   }, [evaluate]);
 
-  const signOut = () => supabase.auth.signOut();
+  const signedIn = (token: string) => {
+    session.set(token);
+    evaluate();
+  };
 
-  if (gate.step === "ready" && session) return <Console email={session.user.email ?? ""} onSignOut={signOut} />;
+  const signOut = async () => {
+    await ops("/auth/logout", { method: "POST" }).catch(() => {});
+    session.set(null);
+    setMe(null);
+    evaluate();
+  };
+
+  if (gate.step === "ready" && me) return <Console email={me.user.email} emailEnabled={me.email_enabled} onSignOut={signOut} />;
 
   return (
     <div className="grid min-h-screen place-items-center px-4 py-10">
@@ -60,22 +77,16 @@ export default function OpsApp() {
         <p className="mt-1 font-mono text-xs text-muted-foreground">Console interne · accès réservé à l'équipe</p>
         <div className="glass-card mt-8 rounded-[1.75rem] p-7">
           {gate.step === "loading" && <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" />}
-          {gate.step === "signed-out" && <SignIn />}
-          {gate.step === "enroll" && <Enroll onDone={() => supabase.auth.getSession().then(({ data }) => evaluate(data.session))} />}
-          {gate.step === "verify" && <Verify factorId={gate.factorId} onDone={() => supabase.auth.getSession().then(({ data }) => evaluate(data.session))} />}
-          {gate.step === "set-password" && (
-            <SetPassword
-              onDone={() => {
-                needsPassword.current = false;
-                setGate({ step: "ready" });
-              }}
-            />
-          )}
+          {gate.step === "setup" && <Setup onDone={signedIn} />}
+          {gate.step === "signed-out" && <SignIn onDone={signedIn} />}
+          {gate.step === "enroll" && <Enroll onDone={evaluate} />}
+          {gate.step === "verify" && <Verify onDone={evaluate} />}
+          {gate.step === "link" && <SetPassword token={gate.token} onDone={signedIn} />}
           {gate.step === "not-staff" && (
             <div className="grid gap-4 text-sm">
               <p className="font-semibold">Ce compte n'a pas accès à la console.</p>
               <p className="text-muted-foreground">
-                Connecté en tant que {session?.user.email}. Demandez à un administrateur MOVA de vous ajouter à l'équipe.
+                Connecté en tant que {me?.user.email}. Demandez à un administrateur MOVA de vous ajouter à l'équipe.
               </p>
               <Button variant="outline" onClick={signOut}>
                 <LogOut className="size-4" /> Se déconnecter
@@ -93,7 +104,60 @@ export default function OpsApp() {
   );
 }
 
-function SignIn() {
+// First start only: while nobody is in the team, create the first admin with the SETUP_CODE secret
+// set in the Cloudflare dashboard. The Worker refuses this once a team member exists.
+function Setup({ onDone }: { onDone: (token: string) => void }) {
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const password = String(f.get("password"));
+    if (password.length < 12) return setError("Mot de passe : 12 caractères minimum.");
+    if (password !== String(f.get("confirm"))) return setError("Les deux mots de passe ne correspondent pas.");
+    setBusy(true);
+    setError("");
+    try {
+      const r = await api<{ token: string }>("/setup", { method: "POST", body: { code: f.get("code"), email: f.get("email"), password } });
+      onDone(r.token);
+    } catch (err) {
+      setBusy(false);
+      setError(err instanceof ApiError && err.code === "bad_setup_code" ? "Code d'installation incorrect (voir le secret SETUP_CODE dans Cloudflare)." : "Création impossible. Vérifiez l'e-mail et réessayez.");
+    }
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="grid gap-4">
+      <p className="flex items-center gap-2 font-semibold">
+        <ShieldCheck className="size-5 text-primary" /> Premier administrateur
+      </p>
+      <p className="text-sm text-muted-foreground">Aucun membre de l'équipe pour l'instant. Créez le compte administrateur avec le code d'installation.</p>
+      <label className="grid gap-1.5 text-sm font-medium text-muted-foreground">
+        Code d'installation
+        <input id="ops-setup-code" name="code" required autoComplete="off" className={inputClass} />
+      </label>
+      <label className="grid gap-1.5 text-sm font-medium text-muted-foreground">
+        E-mail
+        <input id="ops-setup-email" name="email" type="email" required autoComplete="username" className={inputClass} />
+      </label>
+      <label className="grid gap-1.5 text-sm font-medium text-muted-foreground">
+        Mot de passe (12 caractères minimum)
+        <input id="ops-setup-password" name="password" type="password" required minLength={12} autoComplete="new-password" className={inputClass} />
+      </label>
+      <label className="grid gap-1.5 text-sm font-medium text-muted-foreground">
+        Confirmer
+        <input id="ops-setup-confirm" name="confirm" type="password" required minLength={12} autoComplete="new-password" className={inputClass} />
+      </label>
+      {error && <p role="alert" className="text-sm font-medium text-warning">{error}</p>}
+      <Button type="submit" size="lg" disabled={busy}>
+        {busy && <Loader2 className="size-4 animate-spin" />} Créer le compte
+      </Button>
+    </form>
+  );
+}
+
+function SignIn({ onDone }: { onDone: (token: string) => void }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
   const [notice, setNotice] = React.useState("");
@@ -105,9 +169,13 @@ function SignIn() {
     setNotice("");
     if (!email) return setError("Saisissez d'abord votre e-mail.");
     setBusy(true);
-    await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    const r = await api<{ email_enabled: boolean }>("/auth/forgot", { method: "POST", body: { email } }).catch(() => null);
     setBusy(false);
-    setNotice("Si ce compte existe, un lien pour choisir un nouveau mot de passe vient d'être envoyé.");
+    setNotice(
+      r?.email_enabled
+        ? "Si ce compte existe, un lien pour choisir un nouveau mot de passe vient d'être envoyé."
+        : "L'envoi d'e-mails n'est pas encore activé. Demandez à un administrateur un lien de réinitialisation (rubrique Équipe).",
+    );
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -115,12 +183,13 @@ function SignIn() {
     const f = new FormData(e.currentTarget);
     setBusy(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email: String(f.get("email")),
-      password: String(f.get("password")),
-    });
-    setBusy(false);
-    if (error) setError("E-mail ou mot de passe incorrect.");
+    try {
+      const r = await api<{ token: string }>("/auth/login", { method: "POST", body: { email: String(f.get("email")), password: String(f.get("password")) } });
+      onDone(r.token);
+    } catch (err) {
+      setBusy(false);
+      setError(err instanceof ApiError && err.code === "too_many_requests" ? "Trop de tentatives. Réessayez dans 15 minutes." : "E-mail ou mot de passe incorrect.");
+    }
   };
 
   return (
@@ -176,16 +245,19 @@ function CodeForm({ onSubmit, busy, error, label }: { onSubmit: (code: string) =
   );
 }
 
-function Verify({ factorId, onDone }: { factorId: string; onDone: () => void }) {
+function Verify({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
 
   const submit = async (code: string) => {
     setBusy(true);
     setError("");
-    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
-    setBusy(false);
-    if (error) return setError("Code incorrect ou expiré. Réessayez avec le code affiché maintenant.");
+    try {
+      await ops("/auth/mfa/verify", { method: "POST", body: { code } });
+    } catch {
+      setBusy(false);
+      return setError("Code incorrect ou expiré. Réessayez avec le code affiché maintenant.");
+    }
     onDone();
   };
 
@@ -201,7 +273,7 @@ function Verify({ factorId, onDone }: { factorId: string; onDone: () => void }) 
 }
 
 function Enroll({ onDone }: { onDone: () => void }) {
-  const [factor, setFactor] = React.useState<{ id: string; qr: string; secret: string } | null>(null);
+  const [factor, setFactor] = React.useState<{ qr: string; secret: string } | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -211,14 +283,12 @@ function Enroll({ onDone }: { onDone: () => void }) {
     if (started.current) return;
     started.current = true;
     (async () => {
-      // Drop half-finished enrolments from earlier attempts before starting a new one.
-      const { data: list } = await supabase.auth.mfa.listFactors();
-      for (const f of list?.all ?? []) {
-        if (f.status === "unverified") await supabase.auth.mfa.unenroll({ factorId: f.id });
+      try {
+        const r = await ops<{ secret: string; uri: string }>("/auth/mfa/enroll", { method: "POST" });
+        setFactor({ qr: await QRCode.toDataURL(r.uri, { margin: 1, width: 352 }), secret: r.secret });
+      } catch {
+        setError("Impossible de démarrer la configuration. Rechargez la page.");
       }
-      const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `MOVA Ops ${Date.now()}` });
-      if (error || !data) return setError("Impossible de démarrer la configuration. Rechargez la page.");
-      setFactor({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
     })();
   }, []);
 
@@ -226,9 +296,12 @@ function Enroll({ onDone }: { onDone: () => void }) {
     if (!factor) return;
     setBusy(true);
     setError("");
-    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
-    setBusy(false);
-    if (error) return setError("Code incorrect. Vérifiez l'heure de votre téléphone et réessayez.");
+    try {
+      await ops("/auth/mfa/verify", { method: "POST", body: { code } });
+    } catch {
+      setBusy(false);
+      return setError("Code incorrect. Vérifiez l'heure de votre téléphone et réessayez.");
+    }
     onDone();
   };
 
@@ -255,7 +328,7 @@ function Enroll({ onDone }: { onDone: () => void }) {
   );
 }
 
-function SetPassword({ onDone }: { onDone: () => void }) {
+function SetPassword({ token, onDone }: { token: string; onDone: (session: string) => void }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -267,10 +340,17 @@ function SetPassword({ onDone }: { onDone: () => void }) {
     if (password !== String(f.get("confirm"))) return setError("Les deux mots de passe ne correspondent pas.");
     setBusy(true);
     setError("");
-    const { error } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (error) return setError("Impossible d'enregistrer ce mot de passe. Essayez-en un autre, plus long.");
-    onDone();
+    try {
+      const r = await api<{ token: string }>("/auth/reset", { method: "POST", body: { token, password } });
+      onDone(r.token);
+    } catch (err) {
+      setBusy(false);
+      setError(
+        err instanceof ApiError && err.code === "link_expired"
+          ? "Ce lien a expiré ou a déjà servi. Demandez-en un nouveau à un administrateur."
+          : "Impossible d'enregistrer ce mot de passe. Essayez-en un autre, plus long.",
+      );
+    }
   };
 
   return (
@@ -278,7 +358,7 @@ function SetPassword({ onDone }: { onDone: () => void }) {
       <p className="flex items-center gap-2 font-semibold">
         <ShieldCheck className="size-5 text-primary" /> Choisissez votre mot de passe
       </p>
-      <p className="text-sm text-muted-foreground">Vous l'utiliserez avec votre code à 6 chiffres pour vos prochaines connexions.</p>
+      <p className="text-sm text-muted-foreground">Vous l'utiliserez avec un code à 6 chiffres (application d'authentification) pour vos connexions.</p>
       <label className="grid gap-1.5 text-sm font-medium text-muted-foreground">
         Nouveau mot de passe
         <input id="ops-new-password" name="password" type="password" required minLength={12} autoComplete="new-password" className={inputClass} />

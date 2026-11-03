@@ -1,6 +1,5 @@
-// Waitlist sign-ups are stored in Supabase (table public.mova_signups, insert-only for visitors).
-// The publishable key is meant to be public; row level security only allows inserts.
-import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/supabase-config";
+// Waitlist sign-ups go to the MOVA API (Cloudflare Worker + D1). Visitors can only add a sign-up.
+import { api } from "@/lib/api";
 
 export type Signup = {
   kind: "passenger" | "driver";
@@ -24,16 +23,7 @@ export async function submitSignup(s: Signup): Promise<void> {
     commune: clean(s.commune),
     details: clean(s.details),
   };
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/mova_signups`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`Signup failed (${res.status})`);
+  await api("/signups", { method: "POST", body });
 }
 
 export const SIGNUP_ERROR =

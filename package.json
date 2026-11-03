@@ -6,22 +6,28 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck:worker": "tsc -p worker",
+    "dev:api": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "db:schema": "wrangler d1 execute mova-db --remote --file worker/schema.sql"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",
-    "@supabase/supabase-js": "^2.57.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
     "lucide-react": "^1.65.0",
     "motion": "^11.18.2",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261103.1",
     "@types/node": "^26.6.6",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
@@ -30,6 +36,7 @@
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.6",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "wrangler": "^4.157.0"
   }
 }

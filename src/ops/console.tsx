@@ -1,6 +1,7 @@
 import * as React from "react";
 import { AppSection } from "@/ops/app-section";
-import { Download, Loader2, LogOut, RefreshCw, Search, X } from "lucide-react";
+import { TeamSection } from "@/ops/team-section";
+import { Download, Loader2, LogOut, RefreshCw, Search, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/consent";
 import { cn } from "@/lib/utils";
@@ -8,10 +9,10 @@ import {
   DRIVER_STATUSES,
   PASSENGER_STATUSES,
   STATUS_LABELS,
-  supabase,
+  ops,
   type SignupRow,
   type SignupStatus,
-} from "@/ops/supabase";
+} from "@/ops/client";
 
 type Tab = "driver" | "passenger";
 
@@ -26,7 +27,7 @@ const statusStyle: Record<SignupStatus, string> = {
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 
-export function Console({ email, onSignOut }: { email: string; onSignOut: () => void }) {
+export function Console({ email, emailEnabled, onSignOut }: { email: string; emailEnabled: boolean; onSignOut: () => void }) {
   const [rows, setRows] = React.useState<SignupRow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -37,11 +38,14 @@ export function Console({ email, onSignOut }: { email: string; onSignOut: () => 
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("mova_signups").select("*").order("created_at", { ascending: false });
+    try {
+      const r = await ops<{ signups: SignupRow[] }>("/ops/signups");
+      setError("");
+      setRows(r.signups);
+    } catch {
+      setError("Impossible de charger les inscriptions. Reconnectez-vous puis réessayez.");
+    }
     setLoading(false);
-    if (error) return setError("Impossible de charger les inscriptions. Reconnectez-vous puis réessayez.");
-    setError("");
-    setRows((data ?? []) as SignupRow[]);
   }, []);
 
   React.useEffect(() => {
@@ -87,6 +91,21 @@ export function Console({ email, onSignOut }: { email: string; onSignOut: () => 
     a.download = `mova-${tab === "driver" ? "chauffeurs" : "passagers"}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Bring in a CSV exported from the former console (same columns as the export above).
+  const importCsv = async (file: File) => {
+    const rowsIn = parseCsv((await file.text()).replace(/^\uFEFF/, ""));
+    const [head, ...body] = rowsIn;
+    if (!head?.includes("email")) return window.alert("Fichier non reconnu : utilisez un export CSV de la console MOVA.");
+    const objs = body.filter((r) => r.length > 1).map((r) => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ""])));
+    try {
+      const res = await ops<{ added: number; skipped: number }>("/ops/signups/import", { method: "POST", body: { rows: objs } });
+      window.alert(`${res.added} inscription(s) importée(s), ${res.skipped} ignorée(s) (doublons ou lignes invalides).`);
+      load();
+    } catch {
+      window.alert("Import impossible. Reconnectez-vous puis réessayez.");
+    }
   };
 
   const onSaved = (updated: SignupRow) => setRows((rs) => rs.map((r) => (r.id === updated.id ? updated : r)));
@@ -172,6 +191,19 @@ export function Console({ email, onSignOut }: { email: string; onSignOut: () => 
               <Button variant="outline" size="sm" onClick={load} aria-label="Actualiser">
                 <RefreshCw className={cn("size-4", loading && "animate-spin")} />
               </Button>
+              <label className="glass inline-flex h-9 cursor-pointer items-center gap-2 rounded-full px-4 text-sm font-medium tracking-wide hover:bg-white/60 focus-within:ring-2 focus-within:ring-ring" title="Importer un export CSV de l'ancienne console">
+                <Upload className="size-4" /> Importer
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (f) importCsv(f);
+                  }}
+                />
+              </label>
               <Button variant="outline" size="sm" onClick={exportCsv} disabled={!list.length}>
                 <Download className="size-4" /> CSV
               </Button>
@@ -225,6 +257,7 @@ export function Console({ email, onSignOut }: { email: string; onSignOut: () => 
         </section>
 
         <AppSection />
+        <TeamSection emailEnabled={emailEnabled} />
       </main>
 
       {open && <DetailPanel row={open} onClose={() => setOpenId(null)} onSaved={onSaved} />}
@@ -272,15 +305,14 @@ function DetailPanel({ row, onClose, onSaved }: { row: SignupRow; onClose: () =>
   const save = async () => {
     setBusy(true);
     setMessage(null);
-    const { data, error } = await supabase
-      .from("mova_signups")
-      .update({ status, notes: notes.trim() || null, updated_at: new Date().toISOString() })
-      .eq("id", row.id)
-      .select("*")
-      .single();
-    setBusy(false);
-    if (error || !data) return setMessage({ ok: false, text: "Enregistrement impossible. Reconnectez-vous puis réessayez." });
-    onSaved(data as SignupRow);
+    try {
+      const r = await ops<{ signup: SignupRow }>(`/ops/signups/${row.id}`, { method: "PATCH", body: { status, notes: notes.trim() || null } });
+      setBusy(false);
+      onSaved(r.signup);
+    } catch {
+      setBusy(false);
+      return setMessage({ ok: false, text: "Enregistrement impossible. Reconnectez-vous puis réessayez." });
+    }
     setMessage({ ok: true, text: "Enregistré." });
   };
 
@@ -364,4 +396,37 @@ function DetailPanel({ row, onClose, onSaved }: { row: SignupRow; onClose: () =>
       </aside>
     </div>
   );
+}
+
+// Minimal CSV reader for the console's own exports (quoted fields, "" escapes, commas and new lines in quotes).
+function parseCsv(text: string): string[][] {
+  const out: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell);
+      out.push(row);
+      row = [];
+      cell = "";
+    } else cell += ch;
+  }
+  if (cell || row.length) {
+    row.push(cell);
+    out.push(row);
+  }
+  return out;
 }

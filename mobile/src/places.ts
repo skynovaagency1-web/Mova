@@ -1,4 +1,4 @@
-import type { CategoryId } from "./supabase";
+import type { CategoryId } from "./api";
 
 // Pilot pick-up points in Besançon. Real address search and maps come in the next step.
 export type Place = { id: string; label: string; short: string; lat: number; lng: number };

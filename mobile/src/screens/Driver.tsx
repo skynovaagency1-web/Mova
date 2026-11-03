@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ActivityIndicator, Linking, Platform, RefreshControl, ScrollView, Text, View } from "react-native";
 import { usePolling } from "../hooks";
-import { errorText, supabase, type Contact, type Driver as DriverRow, type Profile, type Ride } from "../supabase";
+import { call, errorText, type Contact, type Driver as DriverRow, type Profile, type Ride } from "../api";
 import { Body, Button, C, Card, ErrorText, Label, SERIF, Title } from "../ui";
 import { Header } from "./Header";
 import { RideRoute } from "./RideRoute";
@@ -26,23 +26,13 @@ export function Driver({ profile }: { profile: Profile }) {
   const [tab, setTab] = React.useState<"rides" | "account">("rides");
 
   const load = React.useCallback(async () => {
-    const [{ data: d }, { data: mine }] = await Promise.all([
-      supabase.from("mova_drivers").select("*").eq("user_id", profile.user_id).maybeSingle(),
-      supabase
-        .from("mova_rides")
-        .select("*")
-        .eq("driver_id", profile.user_id)
-        .in("status", ["accepted", "arriving", "in_progress"])
-        .limit(1)
-        .maybeSingle(),
-    ]);
-    setDriver((d as DriverRow | null) ?? null);
-    setRide((mine as Ride | null) ?? null);
-    if (d?.online && !mine) {
-      const { data: open } = await supabase.from("mova_rides").select("*").eq("status", "requested").order("created_at").limit(20);
-      setRequests((open as Ride[] | null) ?? []);
-    } else setRequests([]);
-  }, [profile.user_id]);
+    // One call: the driver record, their active ride, and open requests while online and free.
+    const { data, error } = await call<{ driver: DriverRow | null; ride: Ride | null; requests: Ride[] }>("/driver");
+    if (error || !data) return; // offline: keep what is on screen, the next poll retries
+    setDriver(data.driver);
+    setRide(data.ride);
+    setRequests(data.requests);
+  }, []);
 
   usePolling(load, driver?.online || ride ? 4000 : 20000);
 
@@ -76,7 +66,7 @@ export function Driver({ profile }: { profile: Profile }) {
         tint: driver.online ? "sage" : "sand",
         busy: busy === "online",
         disabled: !driver.approved || !!ride,
-        onPress: () => run("online", () => supabase.rpc("mova_update_driver", { p_online: !driver.online })),
+        onPress: () => run("online", () => call("/driver", { method: "PATCH", body: { online: !driver.online } })),
       }}
       right={{ icon: "person", label: "Compte", active: tab === "account", onPress: () => setTab("account") }}
     />
@@ -126,7 +116,7 @@ export function Driver({ profile }: { profile: Profile }) {
             {requests.map((r) => (
               <Card key={r.id}>
                 <RideRoute ride={r} />
-                <Button title="Accepter" busy={busy === `accept-${r.id}`} onPress={() => run(`accept-${r.id}`, () => supabase.rpc("mova_accept_ride", { p_ride_id: r.id }))} />
+                <Button title="Accepter" busy={busy === `accept-${r.id}`} onPress={() => run(`accept-${r.id}`, () => call(`/rides/${r.id}/accept`, { method: "POST" }))} />
               </Card>
             ))}
           </View>
@@ -144,7 +134,7 @@ function ActiveRide({ ride, busy, run }: { ride: Ride; busy: string | null; run:
   const next = NEXT[ride.status];
 
   React.useEffect(() => {
-    supabase.rpc("mova_ride_contact", { p_ride_id: ride.id }).then(({ data }) => setContact((data as Contact[] | null)?.[0] ?? null));
+    call<{ contact: Contact | null }>(`/rides/${ride.id}/contact`).then(({ data }) => setContact(data?.contact ?? null));
   }, [ride.id]);
 
   const sharing = useShareLocation(["accepted", "arriving", "in_progress"].includes(ride.status) ? ride.id : null);
@@ -187,11 +177,11 @@ function ActiveRide({ ride, busy, run }: { ride: Ride; busy: string | null; run:
           title={next.label}
           variant={next.status === "completed" ? "signal" : "primary"}
           busy={busy === "advance"}
-          onPress={() => run("advance", () => supabase.rpc("mova_advance_ride", { p_ride_id: ride.id, p_status: next.status }))}
+          onPress={() => run("advance", () => call(`/rides/${ride.id}/advance`, { method: "POST", body: { status: next.status } }))}
         />
       )}
       {(ride.status === "accepted" || ride.status === "arriving") && (
-        <Button title="Annuler la course" variant="outline" busy={busy === "cancel"} onPress={() => run("cancel", () => supabase.rpc("mova_cancel_ride", { p_ride_id: ride.id }))} />
+        <Button title="Annuler la course" variant="outline" busy={busy === "cancel"} onPress={() => run("cancel", () => call(`/rides/${ride.id}/cancel`, { method: "POST" }))} />
       )}
     </View>
   );

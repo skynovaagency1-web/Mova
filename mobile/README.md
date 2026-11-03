@@ -5,7 +5,8 @@ One Expo / React Native codebase for both apps. The account's role picks the exp
 - **Passenger:** choose pick-up and drop-off (pilot list of Besançon places), see the estimate, request a ride, follow its status, cancel.
 - **Driver:** register vehicle, wait for MOVA validation, go online, see open requests, accept, then "en route" → "passager à bord" → "terminer".
 
-Sign-in uses e-mail + password (Supabase Auth, "Confirm email" turned off for the pilot because the project has no custom e-mail service yet). There is no payment, map or live GPS yet; those come in the next steps.
+Sign-in uses e-mail + password (MOVA API on Cloudflare). Addresses are not confirmed during the pilot; a forgotten password is
+reset with a link the team creates in the ops console. There is no payment yet. Account deletion is in Compte → Supprimer mon compte.
 
 ## Run it on your phone
 
@@ -15,11 +16,10 @@ Sign-in uses e-mail + password (Supabase Auth, "Confirm email" turned off for th
 
 ## Backend
 
-Uses the same Supabase project as the website (`src/config.ts`, overridable with `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_KEY`).
-The schema is in `../supabase/migrations/` (`20261103_mova_rides_v1.sql` for the app). All ride changes go through database
-functions (`mova_request_ride`, `mova_accept_ride`, `mova_advance_ride`, `mova_cancel_ride`) that enforce who may do what;
-prices are computed in the database. Drivers are validated by staff in the ops console (`/ops/`).
-
+The app talks to the MOVA API, the Cloudflare Worker in `../worker/` (D1 database, R2 bucket for driver photos).
+Its address is in `src/config.ts` (`API_URL`, overridable with `EXPO_PUBLIC_API_URL`). Every rule is enforced by the Worker:
+who may accept, advance or cancel a ride, who may see a driver photo, server-side prices, one active ride per person.
+Drivers are validated by staff in the ops console (`/ops/`).
 
 ## Checks
 

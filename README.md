@@ -1,66 +1,61 @@
-# MOVA · Besançon (prototype)
+# MOVA · Besançon (pilot)
 
-Site vitrine et prototype interactif pour MOVA, un concept de plateforme VTC locale à Besançon.
+Website, pilot app and staff console for MOVA, a local VTC platform in Besançon.
+Everything runs on **Cloudflare**: one Worker serves the website and the API, **D1** stores the data and **R2** the driver photos.
+Go-live steps: [CLOUDFLARE.md](CLOUDFLARE.md).
 
-> **Pre-launch.** No booking, payment, driver, SMS or verification is real; only waitlist sign-ups are stored. Keep the demo notices and never collect ID or insurance documents through this site.
+> **Pilot.** No payment is taken. Never collect ID or insurance documents through the site or the app: staff check them in person
+> and only tick the result in the ops console.
 
 ## Stack
 
-- React 18 + TypeScript + Vite (multi-page)
-- Tailwind CSS with shadcn-style theme tokens
-- UI built from [21st.dev](https://21st.dev) components, adapted to MOVA:
-  - `efferd/header-1` → `src/components/ui/header-1.tsx` (+ `button`, `menu-toggle-icon`, `use-scroll`)
-  - `ravikatiyar162/ride-booking-form` → `src/components/ui/ride-booking-form.tsx`
-  - `shadcnui-blocks/features-01` → `src/components/ui/features-01.tsx`
-  - `ddoemonn/accordion` → `src/components/ui/accordion.tsx`
-  - `meschacirung/footer` → `src/components/ui/footer.tsx`
+- Website: React 18 + TypeScript + Vite (multi-page), Tailwind CSS, UI adapted from [21st.dev](https://21st.dev) components
+- API: Cloudflare Worker in `worker/src` (no framework), D1 (SQLite) schema in `worker/schema.sql`, R2 bucket `mova-driver-photos`
+- App: Expo / React Native in `mobile/` (see `mobile/README.md`)
 
 ## Pages
 
 | Path | Content |
 | --- | --- |
-| `/` (`index.html`) | Landing page: fictitious quote form, how it works, Besançon use cases, verification mock-up (demo code `123456`), passenger waitlist and driver interest form (stored in Supabase), FAQ |
-| `/app.html` | Interactive phone prototype: rider ↔ driver toggle, simulated match, accept/refuse, trip states |
-| `/mentions-legales.html` | Legal notice placeholder, to complete before going public |
-| `mobile/` | Pilot passenger and driver app, Expo / React Native (see `mobile/README.md`) |
+| `/` | Landing page: estimate form, how it works, Besançon places, verification mock-up, passenger waitlist and driver interest form (saved in D1), FAQ |
+| `/app.html` | Interactive phone prototype |
+| `/mentions-legales.html`, `/cgu.html`, `/confidentialite.html` | Legal pages (company details still to fill in `src/components/legal-layout.tsx`) |
+| `/reinitialiser.html` | Choose a new password from a reset link (app users) |
+| `/ops/` | Staff console (below) |
+| `404.html` | Not-found page |
+
+## API (`/api/*`)
+
+| Area | Routes |
+| --- | --- |
+| Waitlist | `POST /api/signups` |
+| Accounts | `POST /api/auth/signup`, `/login`, `/logout`, `/forgot`, `/reset`, `/password`, `/mfa/enroll`, `/mfa/verify`; `GET /api/auth/me` |
+| App | `GET/POST /api/me/profile`, `DELETE /api/me`, `GET /api/me/photo-url`, `GET/PATCH /api/driver`, `POST /api/driver/photo`, `GET /api/rides/current`, `POST /api/rides`, `POST /api/rides/:id/{accept,advance,cancel,location}`, `GET /api/rides/:id/{contact,driver-photo}` |
+| Ops (staff + 2-step) | `/api/ops/signups` (+ `/import`), `/api/ops/drivers`, `/api/ops/drivers/:id/{checks,approval}`, `/api/ops/rides`, `/api/ops/staff`, `/api/ops/reset-link` |
+
+Rules that used to live in Supabase policies and functions are in the Worker: prices computed server-side, one active ride per
+passenger and per driver (unique indexes), approval and going online only with a complete, unexpired checklist, a new car or photo
+removes approval, the driver position is wiped when a ride ends, photos are served only through short-lived signed links.
+Passwords are hashed with PBKDF2-SHA256; sessions are random bearer tokens stored hashed.
+
+## Ops console (`/ops/`)
+
+Staff log in with e-mail + password + a 6-digit code from an authenticator app (set up on first login). Sections: waitlist
+overview and pipeline (with CSV export/import), pilot app drivers (verification checklist, approval) and latest rides, and
+**Équipe et accès** (invite a member, remove one, reset a lost 2-step set-up, create a password-reset link for any account).
+
+The very first admin is created at `/ops/` with the `SETUP_CODE` secret (see CLOUDFLARE.md); this works only while the team is empty.
 
 ## Run locally
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # outputs static files to dist/
-npm run preview
+npx wrangler d1 execute mova-db --local --file worker/schema.sql   # once
+npm run build && npx wrangler dev --var SETUP_CODE:test-setup     # site + API on http://localhost:8787
+node worker/test/e2e.mjs                                          # API checks against the local Worker
+npm run dev                                                       # live-reload site on :5173, /api proxied to :8787
 ```
-
-`dist/` is plain static HTML/JS/CSS and can be hosted anywhere.
-
-## Hosting (GitHub Pages)
-
-`.github/workflows/deploy.yml` builds and publishes the site on every push to `main`.
-One-time setup: in the repo go to **Settings → Pages → Build and deployment → Source** and pick **GitHub Actions**.
-The site is then served at `https://skynovaagency1-web.github.io/Mova/`. A custom domain can be added on the same settings page.
-
-## Waitlist sign-ups
-
-The passenger waitlist and driver interest forms insert rows into the Supabase table `public.mova_signups`
-(organization "MOVA", project "Mova", EU region). Visitors can only insert. The database schema lives in
-`supabase/migrations/`. Override the project with `VITE_SUPABASE_URL` / `VITE_SUPABASE_KEY` (publishable key)
-at build time if needed.
-
-## Ops console (`/ops/`)
-
-Private staff console for the sign-ups: overview, passenger and driver lists, candidate status, notes, CSV export.
-Access requires a Supabase Auth account, a TOTP authenticator app (enrolled on first login) and a row in
-`public.mova_staff`. Row level security enforces both, so the page itself holds no data. The page is `noindex`.
-
-Add a staff member: create the user in Supabase (Authentication → Users → Add user, auto-confirm), then run
-`insert into public.mova_staff (user_id) select id from auth.users where email = '...';`
-
-## Pilot app (`mobile/`)
-
-Expo app for passengers and drivers on the same Supabase project. See `mobile/README.md`.
 
 ## Demo data
 
-All places, prices, drivers and trips live in `src/lib/demo-data.ts`. Prices use straight-line distance × 1.35 and an example tariff; they are not real quotes.
+Places, sample drivers and the example tariff live in `src/lib/demo-data.ts`. Prices use straight-line distance × 1.35; they are estimates.

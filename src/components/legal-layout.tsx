@@ -23,9 +23,9 @@ export const Field = ({ value, label }: { value: string | null; label: string })
 export type Section = { id: string; title: string; body: React.ReactNode };
 
 export const LEGAL_PAGES = [
-  { href: "./mentions-legales.html", label: "Mentions légales" },
-  { href: "./cgu.html", label: "Conditions d'utilisation" },
-  { href: "./confidentialite.html", label: "Confidentialité" },
+  { href: "/mentions-legales.html", label: "Mentions légales" },
+  { href: "/cgu.html", label: "Conditions d'utilisation" },
+  { href: "/confidentialite.html", label: "Confidentialité" },
 ];
 
 export function LegalLayout({ title, intro, updated, current, sections }: { title: string; intro: React.ReactNode; updated: string; current: string; sections: Section[] }) {

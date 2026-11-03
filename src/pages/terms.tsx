@@ -131,7 +131,7 @@ const sections: Section[] = [
     title: "Données personnelles",
     body: (
       <p>
-        Le traitement de vos données est décrit dans la <a href="./confidentialite.html">politique de confidentialité</a>.
+        Le traitement de vos données est décrit dans la <a href="/confidentialite.html">politique de confidentialité</a>.
       </p>
     ),
   },

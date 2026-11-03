@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as Location from "expo-location";
-import { supabase } from "../supabase";
+import { call } from "../api";
 
 export type ShareState = "starting" | "sharing" | "denied" | "error";
 
@@ -23,11 +23,9 @@ export function useShareLocation(rideId: number | null) {
         if (now - last < 3500) return;
         last = now;
         const { latitude, longitude, heading } = pos.coords;
-        const { error } = await supabase.rpc("mova_update_location", {
-          p_ride_id: rideId,
-          p_lat: latitude,
-          p_lng: longitude,
-          p_heading: heading != null && heading >= 0 ? heading : null,
+        const { error } = await call(`/rides/${rideId}/location`, {
+          method: "POST",
+          body: { lat: latitude, lng: longitude, heading: heading != null && heading >= 0 ? heading : null },
         });
         setState(error ? "error" : "sharing");
       });

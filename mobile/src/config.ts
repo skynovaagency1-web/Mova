@@ -1,4 +1,3 @@
-// Public Supabase settings (same project as the website). The publishable key is safe to ship:
-// row level security and the mova_* database functions decide what each account can do.
-export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "https://qhccclcgzatoexnuneue.supabase.co";
-export const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_KEY ?? "sb_publishable_-Sv3Z28P3ysB6yPbwcf82g_Jh0-aZiD";
+// Address of the MOVA website + API (the Cloudflare Worker). Change it here, or set
+// EXPO_PUBLIC_API_URL, once the site has its own domain (e.g. https://mova-besancon.fr).
+export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? "https://mova.skynovaagency1.workers.dev").replace(/\/$/, "");

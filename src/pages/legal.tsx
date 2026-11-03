@@ -48,12 +48,9 @@ const sections: Section[] = [
     body: (
       <ul>
         <li>
-          <strong>Site web</strong> : GitHub Pages, GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis,
-          et Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis.
-        </li>
-        <li>
-          <strong>Données (comptes, courses, liste d'attente)</strong> : Supabase Inc., 970 Toa Payoh North #07-04, Singapour 318992.
-          Serveurs situés dans l'Union européenne.
+          <strong>Site web, application et données (comptes, courses, liste d'attente, photos des chauffeurs)</strong> : Cloudflare, Inc.,
+          101 Townsend Street, San Francisco, CA 94107, États-Unis (Cloudflare Workers, D1 et R2). La base de données est hébergée en
+          Europe de l'Ouest.
         </li>
       </ul>
     ),
@@ -87,8 +84,8 @@ const sections: Section[] = [
           d'abord une réclamation écrite à MOVA.
         </p>
         <p>
-          Données personnelles : voir la <a href="./confidentialite.html">politique de confidentialité</a>. Conditions du service : voir
-          les <a href="./cgu.html">conditions d'utilisation</a>.
+          Données personnelles : voir la <a href="/confidentialite.html">politique de confidentialité</a>. Conditions du service : voir
+          les <a href="/cgu.html">conditions d'utilisation</a>.
         </p>
       </>
     ),

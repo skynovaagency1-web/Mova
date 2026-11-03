@@ -1,22 +1,17 @@
 import * as React from "react";
 import { Alert, Image, Platform, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { errorText, supabase, type Driver } from "../supabase";
+import { absolute, call, errorText, type Driver } from "../api";
 import { Body, Button, C, Card, ErrorText, Label, SERIF } from "../ui";
 
-const BUCKET = "mova-driver-photos";
-
-// Short-lived link to a photo in the private bucket. Null while loading or when there is none.
+// Short-lived signed link to a photo in the private R2 bucket. Null while loading or when there is none.
 export function useSignedPhoto(path: string | null | undefined) {
   const [url, setUrl] = React.useState<string | null>(null);
   React.useEffect(() => {
     let alive = true;
     setUrl(null);
     if (!path) return;
-    supabase.storage
-      .from(BUCKET)
-      .createSignedUrl(path, 3600)
-      .then(({ data }) => alive && setUrl(data?.signedUrl ?? null));
+    call<{ url: string }>(`/me/photo-url?path=${encodeURIComponent(path)}`).then(({ data }) => alive && setUrl(data ? absolute(data.url) : null));
     return () => {
       alive = false;
     };
@@ -53,15 +48,10 @@ export function DriverPhoto({ driver, onChanged }: { driver: Driver; onChanged: 
     if (!asset?.base64) return;
 
     setBusy(true);
-    const path = `${driver.user_id}/${Date.now()}.jpg`;
-    const up = await supabase.storage.from(BUCKET).upload(path, toBytes(asset.base64), { contentType: "image/jpeg", upsert: false });
-    if (up.error) {
-      setBusy(false);
-      return setError("Envoi de la photo impossible. Réessayez.");
-    }
-    const { error } = await supabase.rpc("mova_set_driver_photo", { p_path: path });
+    // Stored as a new file each time, so an approved photo can never be swapped silently.
+    const { error } = await call("/driver/photo", { method: "POST", raw: toBytes(asset.base64), type: "image/jpeg" });
     setBusy(false);
-    if (error) return setError(errorText(error));
+    if (error) return setError(error.message === "bad_photo" ? "Envoi de la photo impossible. Réessayez." : errorText(error));
     onChanged();
   };
 

@@ -5,7 +5,7 @@ export function AppTeaser() {
     <section className="py-20">
       <div className="container">
         <a
-          href="./app.html"
+          href="/app.html"
           className="group grid items-end gap-6 border-y border-foreground/80 py-10 transition-colors hover:bg-card md:grid-cols-[12rem_1fr_auto]"
         >
           <p className="font-mono text-xs text-muted-foreground">04 · Prototype</p>

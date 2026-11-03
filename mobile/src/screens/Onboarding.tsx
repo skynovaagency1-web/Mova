@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ScrollView, View } from "react-native";
 import { CATEGORIES } from "../places";
-import { supabase, type CategoryId, type Role } from "../supabase";
+import { call, errorText, type CategoryId, type Role } from "../api";
 import { Body, Button, Chip, ErrorText, Field, Label, Title } from "../ui";
 
 // First launch: choose passenger or driver (once per account), then the minimum details.
@@ -19,19 +19,12 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     if (role === "driver" && (vehicle.trim().length < 2 || plate.trim().length < 4)) return setError("Indiquez votre véhicule et votre plaque.");
     setBusy(true);
     setError("");
-    const { error: e1 } = await supabase.from("mova_profiles").insert({ role, first_name: firstName.trim() });
-    if (e1 && e1.code !== "23505") {
-      setBusy(false);
-      return setError("Enregistrement impossible. Réessayez.");
-    }
-    if (role === "driver") {
-      const { error: e2 } = await supabase.from("mova_drivers").insert({ vehicle: vehicle.trim(), plate: plate.trim().toUpperCase(), category });
-      if (e2 && e2.code !== "23505") {
-        setBusy(false);
-        return setError("Enregistrement du véhicule impossible. Réessayez.");
-      }
-    }
+    const { error: e1 } = await call("/me/profile", {
+      method: "POST",
+      body: { role, first_name: firstName.trim(), ...(role === "driver" ? { vehicle: vehicle.trim(), plate: plate.trim().toUpperCase(), category } : {}) },
+    });
     setBusy(false);
+    if (e1) return setError(e1.message === "bad_request" ? "Vérifiez les informations saisies." : errorText(e1));
     onDone();
   };
 

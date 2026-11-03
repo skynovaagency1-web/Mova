@@ -4,7 +4,7 @@ import { AlertTriangle, Check, ExternalLink, Loader2, UserRound, X } from "lucid
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/consent";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/ops/supabase";
+import { ApiError, ops } from "@/ops/client";
 
 export type VerifDriver = {
   user_id: string;
@@ -133,7 +133,6 @@ function missing(c: Checks, hasPhoto: boolean): string[] {
 
 export function DriverVerification({ driver, onClose, onChanged }: { driver: VerifDriver; onClose: () => void; onChanged: () => void }) {
   const [c, setC] = React.useState<Checks>(EMPTY);
-  const [exists, setExists] = React.useState(false);
   const [photo, setPhoto] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState<"save" | "approve" | null>(null);
@@ -148,11 +147,9 @@ export function DriverVerification({ driver, onClose, onChanged }: { driver: Ver
   React.useEffect(() => {
     let alive = true;
     (async () => {
-      const [{ data }, signed] = await Promise.all([
-        supabase.from("mova_driver_checks").select("*").eq("driver_id", driver.user_id).maybeSingle(),
-        driver.photo_path ? supabase.storage.from("mova-driver-photos").createSignedUrl(driver.photo_path, 600) : Promise.resolve(null),
-      ]);
+      const r = await ops<{ checks: Record<string, unknown> | null; photo_url: string | null }>(`/ops/drivers/${driver.user_id}/checks`).catch(() => null);
       if (!alive) return;
+      const data = r?.checks;
       if (data) {
         const next = { ...EMPTY };
         for (const k of Object.keys(EMPTY) as (keyof Checks)[]) {
@@ -160,9 +157,8 @@ export function DriverVerification({ driver, onClose, onChanged }: { driver: Ver
           if (v !== null && v !== undefined) (next as Record<string, unknown>)[k] = v;
         }
         setC(next);
-        setExists(true);
       }
-      setPhoto(signed && "data" in signed && signed.data ? signed.data.signedUrl : null);
+      setPhoto(r?.photo_url ?? null);
       setLoading(false);
     })();
     return () => {
@@ -180,7 +176,6 @@ export function DriverVerification({ driver, onClose, onChanged }: { driver: Ver
 
   const save = async (): Promise<boolean> => {
     const row = {
-      driver_id: driver.user_id,
       ...c,
       vtc_card_number: c.vtc_card_number.trim() || null,
       revtc_number: c.revtc_number.trim() || null,
@@ -191,16 +186,13 @@ export function DriverVerification({ driver, onClose, onChanged }: { driver: Ver
       insurance_expiry: c.insurance_expiry || null,
       rc_pro_expiry: c.rc_pro_expiry || null,
       vehicle_first_registration: c.vehicle_first_registration || null,
-      updated_at: new Date().toISOString(),
     };
-    const { error } = exists
-      ? await supabase.from("mova_driver_checks").update(row).eq("driver_id", driver.user_id)
-      : await supabase.from("mova_driver_checks").insert(row);
-    if (error) {
-      setMessage({ ok: false, text: "Enregistrement impossible. La base est-elle à jour ? Reconnectez-vous puis réessayez." });
+    try {
+      await ops(`/ops/drivers/${driver.user_id}/checks`, { method: "PUT", body: row });
+    } catch {
+      setMessage({ ok: false, text: "Enregistrement impossible. Reconnectez-vous puis réessayez." });
       return false;
     }
-    setExists(true);
     return true;
   };
 
@@ -217,17 +209,16 @@ export function DriverVerification({ driver, onClose, onChanged }: { driver: Ver
   const onApprove = async () => {
     setBusy("approve");
     if (!(await save())) return setBusy(null);
-    const { error } = await supabase
-      .from("mova_drivers")
-      .update({ approved: true, updated_at: new Date().toISOString() })
-      .eq("user_id", driver.user_id);
-    setBusy(null);
-    if (error) {
+    try {
+      await ops(`/ops/drivers/${driver.user_id}/approval`, { method: "POST", body: { approved: true } });
+    } catch (error) {
+      setBusy(null);
       return setMessage({
         ok: false,
-        text: /checks_incomplete/.test(error.message) ? "Vérification incomplète ou document expiré." : "La validation n'a pas été enregistrée.",
+        text: error instanceof ApiError && error.code === "checks_incomplete" ? "Vérification incomplète ou document expiré." : "La validation n'a pas été enregistrée.",
       });
     }
+    setBusy(null);
     setMessage({ ok: true, text: `${driver.first_name} est validé et peut passer en ligne.` });
     onChanged();
   };

@@ -3,13 +3,14 @@ import { ActivityIndicator, Image, KeyboardAvoidingView, Linking, Platform, Pres
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { C, Glass, SERIF, Wordmark } from "../ui";
-import { supabase } from "../supabase";
+import { auth, errorText } from "../api";
+import { API_URL } from "../config";
 
 const GLOBE = require("../../assets/welcome-globe.jpg");
-const SITE = "https://skynovaagency1-web.github.io/Mova";
+const SITE = API_URL;
 
-// E-mail + password sign-in. The pilot runs without a custom e-mail service, so Supabase's
-// "Confirm email" setting is off; one-time codes come back once a sending service is connected.
+// E-mail + password sign-in (MOVA API). The pilot runs without an e-mail service, so addresses are
+// not confirmed yet; a forgotten password is reset with a link from the MOVA team.
 export function Login() {
   const [mode, setMode] = React.useState<"signin" | "signup">("signin");
   const [email, setEmail] = React.useState("");
@@ -32,19 +33,14 @@ export function Login() {
     if (password.length < 8) return setError("Mot de passe : 8 caractères minimum.");
     setBusy(true);
     if (mode === "signin") {
-      const { error } = await supabase.auth.signInWithPassword({ email: e, password });
+      const error = await auth.signIn(e, password);
       setBusy(false);
-      if (error) setError(error.status === 429 ? "Trop de tentatives. Réessayez dans quelques minutes." : "E-mail ou mot de passe incorrect.");
+      if (error) setError(errorText(error));
       return;
     }
-    const { data, error } = await supabase.auth.signUp({ email: e, password });
+    const error = await auth.signUp(e, password);
     setBusy(false);
-    if (error) {
-      if (/already|registered|exists/i.test(error.message)) return setError("Un compte existe déjà avec cet e-mail. Connectez-vous.");
-      if (/password/i.test(error.message)) return setError("Mot de passe trop faible. Choisissez-en un plus long.");
-      return setError("Création du compte impossible. Réessayez.");
-    }
-    if (!data.session) setNotice("Compte créé. Confirmez votre adresse via l'e-mail reçu, puis connectez-vous.");
+    if (error) setError(errorText(error));
   };
 
   return (
@@ -79,7 +75,7 @@ export function Login() {
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 textContentType={mode === "signup" ? "newPassword" : "password"}
                 placeholder={mode === "signup" ? "mot de passe (8+ caractères)" : "mot de passe"}
-                action={mode === "signin" ? { label: "Oublié", onPress: () => setNotice("Pendant le pilote, écrivez à l'équipe MOVA pour réinitialiser votre mot de passe.") } : undefined}
+                action={mode === "signin" ? { label: "Oublié", onPress: () => setNotice("Pendant le pilote, écrivez à l'équipe MOVA : elle vous enverra un lien pour choisir un nouveau mot de passe.") } : undefined}
               />
 
               {!!error && <Text style={{ color: C.warning, fontWeight: "500" }}>{error}</Text>}

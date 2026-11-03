@@ -1,10 +1,24 @@
-// Cloudflare Workers deploy: serve the Vite build (dist) as static files.
-// With this file, Cloudflare skips its auto-detection, which refuses Vite 5.
+// MOVA on Cloudflare Workers: the Worker (worker/src) answers /api/*, everything else is the
+// Vite build in dist/. D1 holds the data, R2 the driver photos. See CLOUDFLARE.md.
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mova",
+  "main": "worker/src/index.ts",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
-  }
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "mova-db", "database_id": "5c5a3878-25bf-41c1-b8f3-2d8bccb1d222" }
+  ],
+  "r2_buckets": [
+    { "binding": "PHOTOS", "bucket_name": "mova-driver-photos" }
+  ],
+  "observability": { "enabled": true }
+  // Optional, for password-reset e-mails (needs Workers Paid and a domain on Cloudflare):
+  // "send_email": [{ "name": "EMAIL" }],
+  // "vars": { "MAIL_FROM": "noreply@your-domain.fr" }
 }

@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { euro } from "../places";
-import type { Ride } from "../supabase";
+import type { Ride } from "../api";
 import { C } from "../ui";
 
 export function RideRoute({ ride, dark }: { ride: Pick<Ride, "pickup_label" | "dropoff_label" | "km" | "minutes" | "price_estimate">; dark?: boolean }) {

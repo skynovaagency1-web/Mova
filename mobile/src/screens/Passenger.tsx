@@ -3,9 +3,8 @@ import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View
 import { LinearGradient } from "expo-linear-gradient";
 import { PHOTO_CREDITS, PLACE_PHOTOS } from "../place-photos";
 import { usePolling } from "../hooks";
-import { useSignedPhoto } from "./DriverPhoto";
 import { CATEGORIES, PLACES, euro, previewPrice, type Place } from "../places";
-import { ACTIVE, errorText, supabase, type CategoryId, type Contact, type Profile, type Ride } from "../supabase";
+import { ACTIVE, absolute, call, errorText, type CategoryId, type Contact, type Profile, type Ride } from "../api";
 import { Body, Button, C, Card, Chip, ErrorText, Label, SERIF, Title } from "../ui";
 import { Header } from "./Header";
 import { RideRoute } from "./RideRoute";
@@ -31,15 +30,10 @@ export function Passenger({ profile }: { profile: Profile }) {
   const [bookKey, setBookKey] = React.useState(0);
 
   const load = React.useCallback(async () => {
-    const { data } = await supabase
-      .from("mova_rides")
-      .select("*")
-      .eq("passenger_id", profile.user_id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    setRide((data as Ride | null) ?? null);
-  }, [profile.user_id]);
+    const { data, error } = await call<{ ride: Ride | null }>("/rides/current");
+    if (error || !data) return setRide((r) => (r === undefined ? null : r)); // offline: keep what is on screen
+    setRide(data.ride);
+  }, []);
 
   const active = ride && (ACTIVE.includes(ride.status) || ride.id !== dismissed);
   usePolling(load, active && ride && ACTIVE.includes(ride.status) ? 4000 : 30000);
@@ -130,18 +124,21 @@ function Book({ onBooked }: { onBooked: (r: Ride) => void }) {
     if (!from || !to) return;
     setBusy(true);
     setError("");
-    const { data, error } = await supabase.rpc("mova_request_ride", {
-      p_pickup_label: from.label,
-      p_pickup_lat: from.lat,
-      p_pickup_lng: from.lng,
-      p_dropoff_label: to.label,
-      p_dropoff_lat: to.lat,
-      p_dropoff_lng: to.lng,
-      p_category: category,
+    const { data, error } = await call<{ ride: Ride }>("/rides", {
+      method: "POST",
+      body: {
+        pickup_label: from.label,
+        pickup_lat: from.lat,
+        pickup_lng: from.lng,
+        dropoff_label: to.label,
+        dropoff_lat: to.lat,
+        dropoff_lng: to.lng,
+        category,
+      },
     });
     setBusy(false);
-    if (error) return setError(errorText(error));
-    onBooked(data as Ride);
+    if (error || !data) return setError(errorText(error));
+    onBooked(data.ride);
   };
 
   return (
@@ -184,31 +181,30 @@ function Book({ onBooked }: { onBooked: (r: Ride) => void }) {
 
 function CurrentRide({ ride, onChange, onClose }: { ride: Ride; onChange: (r: Ride) => void; onClose: () => void }) {
   const [contact, setContact] = React.useState<Contact | null>(null);
-  const [photoPath, setPhotoPath] = React.useState<string | null>(null);
-  const photo = useSignedPhoto(photoPath);
+  const [photo, setPhoto] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
   const st = STATUS[ride.status];
 
   React.useEffect(() => {
     if (!ride.driver_id || ride.status === "cancelled") return setContact(null);
-    supabase.rpc("mova_ride_contact", { p_ride_id: ride.id }).then(({ data }) => setContact((data as Contact[] | null)?.[0] ?? null));
+    call<{ contact: Contact | null }>(`/rides/${ride.id}/contact`).then(({ data }) => setContact(data?.contact ?? null));
   }, [ride.id, ride.driver_id, ride.status]);
 
   // The driver's photo, so the passenger can recognise who picks them up. Only during the ride.
   const showPhoto = !!ride.driver_id && ["accepted", "arriving", "in_progress"].includes(ride.status);
   React.useEffect(() => {
-    if (!showPhoto) return setPhotoPath(null);
-    supabase.rpc("mova_ride_driver_photo", { p_ride_id: ride.id }).then(({ data }) => setPhotoPath((data as string | null) ?? null));
+    if (!showPhoto) return setPhoto(null);
+    call<{ url: string | null }>(`/rides/${ride.id}/driver-photo`).then(({ data }) => setPhoto(data?.url ? absolute(data.url) : null));
   }, [ride.id, showPhoto]);
 
   const cancel = async () => {
     setBusy(true);
     setError("");
-    const { data, error } = await supabase.rpc("mova_cancel_ride", { p_ride_id: ride.id });
+    const { data, error } = await call<{ ride: Ride }>(`/rides/${ride.id}/cancel`, { method: "POST" });
     setBusy(false);
-    if (error) return setError(errorText(error));
-    onChange(data as Ride);
+    if (error || !data) return setError(errorText(error));
+    onChange(data.ride);
   };
 
   // Live driver position, shown while it is fresh (sent in the last 90 seconds).

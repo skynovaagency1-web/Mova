@@ -2,7 +2,7 @@ import * as React from "react";
 import { Loader2, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/ops/supabase";
+import { ops } from "@/ops/client";
 import { DriverVerification, ExpiryBadge, type VerifDriver } from "@/ops/driver-verification";
 
 type StaffDriver = VerifDriver & { created_at: string };
@@ -38,22 +38,17 @@ export function AppSection() {
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    // Documents expire on their own: take expired drivers offline before listing.
-    await supabase.rpc("mova_pause_expired_drivers");
-    const [d, r] = await Promise.all([
-      supabase.rpc("mova_staff_drivers"),
-      supabase.from("mova_rides").select("id,created_at,status,pickup_label,dropoff_label,price_estimate").order("created_at", { ascending: false }).limit(25),
-    ]);
-    setLoading(false);
-    if (d.error || r.error) {
-      setError("Impossible de charger les données de l'application. La base est-elle à jour ?");
-      return;
+    // The drivers list also takes drivers with an expired document offline first.
+    try {
+      const [d, r] = await Promise.all([ops<{ drivers: StaffDriver[] }>("/ops/drivers"), ops<{ rides: Ride[] }>("/ops/rides")]);
+      setError("");
+      setDrivers(d.drivers);
+      setOpen((cur) => (cur ? d.drivers.find((x) => x.user_id === cur.user_id) ?? null : null));
+      setRides(r.rides);
+    } catch {
+      setError("Impossible de charger les données de l'application. Reconnectez-vous puis réessayez.");
     }
-    setError("");
-    const list = (d.data as StaffDriver[]) ?? [];
-    setDrivers(list);
-    setOpen((cur) => (cur ? list.find((x) => x.user_id === cur.user_id) ?? null : null));
-    setRides((r.data as Ride[]) ?? []);
+    setLoading(false);
   }, []);
 
   React.useEffect(() => {
@@ -63,12 +58,12 @@ export function AppSection() {
   const setApproved = async (driver: StaffDriver, approved: boolean) => {
     if (!window.confirm(`Retirer la validation de ${driver.first_name} ? Ce chauffeur ne pourra plus passer en ligne.`)) return;
     setBusy(driver.user_id);
-    const { error } = await supabase
-      .from("mova_drivers")
-      .update({ approved, ...(approved ? {} : { online: false }), updated_at: new Date().toISOString() })
-      .eq("user_id", driver.user_id);
+    try {
+      await ops(`/ops/drivers/${driver.user_id}/approval`, { method: "POST", body: { approved } });
+    } catch {
+      setError("La modification n'a pas été enregistrée.");
+    }
     setBusy(null);
-    if (error) setError("La modification n'a pas été enregistrée.");
     load();
   };
 

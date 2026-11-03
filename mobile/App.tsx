@@ -1,9 +1,8 @@
 import * as React from "react";
-import type { Session } from "@supabase/supabase-js";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { supabase, type Profile } from "./src/supabase";
+import { auth, call, type Profile } from "./src/api";
 import { Backdrop, C } from "./src/ui";
 import { Welcome } from "./src/screens/Welcome";
 import { Reveal } from "./src/screens/Reveal";
@@ -15,22 +14,27 @@ import { Driver } from "./src/screens/Driver";
 // One codebase for both apps: the account's role decides which one you see.
 // The two store apps (passenger / driver) will be built from this code later.
 export default function App() {
-  const [session, setSession] = React.useState<Session | null | undefined>(undefined);
+  const [session, setSession] = React.useState<boolean | undefined>(undefined);
   const [intro, setIntro] = React.useState(true);
   const [revealed, setRevealed] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null | undefined>(undefined);
 
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => data.subscription.unsubscribe();
+    auth.signedIn().then(setSession);
+    const off = auth.onChange(setSession);
+    return () => {
+      off();
+    };
   }, []);
 
   const loadProfile = React.useCallback(async () => {
     if (!session) return setProfile(undefined);
-    const { data } = await supabase.from("mova_profiles").select("*").eq("user_id", session.user.id).maybeSingle();
-    setProfile((data as Profile | null) ?? null);
-  }, [session?.user.id]);
+    setProfile(undefined);
+    const { data, error } = await call<{ profile: Profile | null }>("/me/profile");
+    // Offline: keep the spinner and retry instead of sending the user to onboarding.
+    if (error) return void setTimeout(loadProfile, 3000);
+    setProfile(data?.profile ?? null);
+  }, [session]);
 
   React.useEffect(() => {
     loadProfile();
@@ -49,7 +53,7 @@ export default function App() {
           <StatusBar style="dark" />
           <View style={{ flex: 1 }}>{screen}</View>
         </SafeAreaView>
-        {session === null && !revealed && <Reveal onDone={() => setRevealed(true)} />}
+        {session === false && !revealed && <Reveal onDone={() => setRevealed(true)} />}
         {intro && <Welcome onDone={() => setIntro(false)} />}
       </Backdrop>
     </SafeAreaProvider>
