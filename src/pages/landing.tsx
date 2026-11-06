@@ -35,8 +35,8 @@ export default function Landing() {
             <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#2c251d]/25 via-transparent to-[#2c251d]/35" />
             <div className="flex min-h-[560px] flex-col items-center justify-between px-6 pb-8 pt-24 text-center sm:min-h-[640px] lg:min-h-[720px]">
               <div>
-                <h1 className="font-display text-[26vw] font-medium leading-[0.8] tracking-[0.04em] text-[#f6f1ec] drop-shadow-[0_2px_24px_rgba(44,37,29,0.25)] sm:text-[11rem] lg:text-[14rem]">
-                  MOVA
+                <h1 className="font-display text-[17vw] font-medium leading-[0.85] tracking-[0.01em] text-[#f6f1ec] drop-shadow-[0_2px_24px_rgba(44,37,29,0.25)] sm:text-[8rem] lg:text-[11rem]">
+                  MovaaGo
                 </h1>
                 <a href="#liste-attente" className="group mt-8 inline-flex items-center gap-1 rounded-full bg-[#3a3528]/90 py-1.5 pl-5 pr-1.5 text-sm text-[#f6f1ec] backdrop-blur transition hover:bg-[#3a3528]">
                   Rejoindre la liste d'attente
@@ -56,7 +56,7 @@ export default function Landing() {
             <br />à l'heure.
           </h2>
           <p className="max-w-md text-lg leading-relaxed text-muted-foreground lg:justify-self-end">
-            MOVA met en relation les Bisontins avec des chauffeurs VTC indépendants de la ville. Prix connu avant de partir,
+            MovaaGo met en relation les Bisontins avec des chauffeurs VTC indépendants de la ville. Prix connu avant de partir,
             chauffeurs vérifiés, support local.
           </p>
         </section>
@@ -105,7 +105,7 @@ function PhotoStrip() {
     { kind: "img" as const, src: touch, pos: "50% 75%", rot: "-rotate-[3deg]", h: "h-64 sm:h-80" },
   ];
   return (
-    <section aria-label="L'esprit MOVA" className="snap-x overflow-x-auto py-10 [scrollbar-width:none]">
+    <section aria-label="L'esprit MovaaGo" className="snap-x overflow-x-auto py-10 [scrollbar-width:none]">
       <div className="mx-auto flex w-max items-center gap-5 px-6 sm:gap-7">
         {cards.map((c, i) => (
           <div key={i} className={`snap-center ${c.rot} ${c.h} w-44 shrink-0 overflow-hidden rounded-[1.75rem] shadow-[0_24px_50px_-20px_rgba(90,70,50,0.45)] sm:w-60`}>

@@ -25,7 +25,7 @@ export default function PrototypeApp() {
       <main className="container grid items-start gap-10 pb-16 pt-4 lg:grid-cols-[1fr_380px]">
         <div className="max-w-xl lg:pt-10">
           <p className="font-mono text-xs text-muted-foreground">Prototype interactif · données fictives</p>
-          <h1 className="font-wide mt-4 text-4xl font-black leading-[0.95] tracking-tight sm:text-5xl">L'app MOVA, côté passager et côté chauffeur</h1>
+          <h1 className="font-wide mt-4 text-4xl font-black leading-[0.95] tracking-tight sm:text-5xl">L'app MovaaGo, côté passager et côté chauffeur</h1>
           <p className="mt-3 text-lg text-muted-foreground">
             Tout est simulé dans votre navigateur : pas de GPS, pas de dispatch, pas de paiement. Le chauffeur, la carte et
             les montants sont fictifs.

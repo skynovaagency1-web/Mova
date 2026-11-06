@@ -66,7 +66,7 @@ export function Reveal({ onDone }: { onDone: () => void }) {
         <View style={{ width: 1, height: Math.max(40, H * 0.6 - DOT_Y - 60), backgroundColor: "rgba(255,255,255,0.7)" }} />
       </View>
       <View pointerEvents="box-none" style={{ flex: 1, alignItems: "center", paddingTop: insets.top + 24, paddingBottom: insets.bottom + 28 }}>
-        <Text style={{ color: "rgba(255,255,255,0.95)", fontFamily: SERIF, fontSize: 18, letterSpacing: 4, marginRight: -4 }}>MOVA</Text>
+        <Text style={{ color: "rgba(255,255,255,0.95)", fontFamily: SERIF, fontSize: 20, letterSpacing: 1, marginRight: -1 }}>MovaaGo</Text>
 
         <View style={{ flex: 1 }} />
 

@@ -55,7 +55,7 @@ export default function OpsApp() {
       <div className="ops-backdrop" aria-hidden />
       <div className="w-full max-w-sm">
         <p className="font-display text-4xl font-medium tracking-[0.14em]">
-          MOVA <span className="text-xl tracking-[0.3em] text-muted-foreground">OPS</span>
+          MovaaGo <span className="text-xl tracking-[0.3em] text-muted-foreground">OPS</span>
         </p>
         <p className="mt-1 font-mono text-xs text-muted-foreground">Console interne · accès réservé à l'équipe</p>
         <div className="glass-card mt-8 rounded-[1.75rem] p-7">
@@ -75,7 +75,7 @@ export default function OpsApp() {
             <div className="grid gap-4 text-sm">
               <p className="font-semibold">Ce compte n'a pas accès à la console.</p>
               <p className="text-muted-foreground">
-                Connecté en tant que {session?.user.email}. Demandez à un administrateur MOVA de vous ajouter à l'équipe.
+                Connecté en tant que {session?.user.email}. Demandez à un administrateur MovaaGo de vous ajouter à l'équipe.
               </p>
               <Button variant="outline" onClick={signOut}>
                 <LogOut className="size-4" /> Se déconnecter
@@ -216,7 +216,7 @@ function Enroll({ onDone }: { onDone: () => void }) {
       for (const f of list?.all ?? []) {
         if (f.status === "unverified") await supabase.auth.mfa.unenroll({ factorId: f.id });
       }
-      const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `MOVA Ops ${Date.now()}` });
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `MovaaGo Ops ${Date.now()}` });
       if (error || !data) return setError("Impossible de démarrer la configuration. Rechargez la page.");
       setFactor({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
     })();

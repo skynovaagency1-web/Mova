@@ -10,7 +10,7 @@ export const Todo = ({ children }: { children: React.ReactNode }) => (
 
 // Company details in one place: fill these once and every legal page updates.
 export const COMPANY = {
-  name: null as string | null, // "Prénom Nom (EI)" as on the SIRENE register, with the trade name MOVA
+  name: null as string | null, // "Prénom Nom (EI)" as on the SIRENE register, with the trade name MovaaGo
   siren: null as string | null,
   address: null as string | null,
   email: null as string | null,

@@ -49,7 +49,7 @@ export function Security() {
     <section id="securite" className="scroll-mt-24 py-20">
       <div className="container">
         <SectionHeading tag="03 · Sécurité" title="Des chauffeurs contrôlés, des passagers vérifiés">
-          Ce que MOVA prévoit de vérifier avant le pilote. La liste exacte des pièces sera validée par un spécialiste.
+          Ce que MovaaGo prévoit de vérifier avant le pilote. La liste exacte des pièces sera validée par un spécialiste.
         </SectionHeading>
       <div className="mt-10 grid items-start gap-10 md:ml-[12rem] lg:grid-cols-2">
         <div>

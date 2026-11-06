@@ -16,10 +16,10 @@ import { Account } from "./Account";
 import { Rudder, RUDDER_SPACE } from "./Rudder";
 
 const STATUS: Record<Ride["status"], { title: string; text: string }> = {
-  requested: { title: "Recherche d'un chauffeur…", text: "Votre demande est envoyée aux chauffeurs MOVA en ligne." },
+  requested: { title: "Recherche d'un chauffeur…", text: "Votre demande est envoyée aux chauffeurs MovaaGo en ligne." },
   accepted: { title: "Chauffeur trouvé", text: "Votre chauffeur se prépare à venir vous chercher." },
   arriving: { title: "Votre chauffeur arrive", text: "Rendez-vous au point de prise en charge." },
-  in_progress: { title: "En route", text: "Bon trajet avec MOVA." },
+  in_progress: { title: "En route", text: "Bon trajet avec MovaaGo." },
   completed: { title: "Vous êtes arrivé", text: "Le paiement n'est pas encore géré dans l'application pilote." },
   cancelled: { title: "Course annulée", text: "" },
 };

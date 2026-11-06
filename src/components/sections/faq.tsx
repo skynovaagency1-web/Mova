@@ -5,7 +5,7 @@ const items = [
   {
     id: "real",
     title: "Puis-je réserver une vraie course aujourd'hui ?",
-    content: <p>Pas encore. MOVA prépare un pilote à Besançon : le parcours de réservation du site est une démonstration. Inscrivez-vous à la liste d'attente pour être prévenu de l'ouverture.</p>,
+    content: <p>Pas encore. MovaaGo prépare un pilote à Besançon : le parcours de réservation du site est une démonstration. Inscrivez-vous à la liste d'attente pour être prévenu de l'ouverture.</p>,
   },
   {
     id: "zone",
@@ -20,7 +20,7 @@ const items = [
   {
     id: "payment",
     title: "Comment se fera le paiement ?",
-    content: <p>Via un prestataire de paiement agréé, adapté aux places de marché (vérification des bénéficiaires, reversement aux chauffeurs, remboursements). MOVA n'encaissera pas les fonds en propre sans avis spécialisé.</p>,
+    content: <p>Via un prestataire de paiement agréé, adapté aux places de marché (vérification des bénéficiaires, reversement aux chauffeurs, remboursements). MovaaGo n'encaissera pas les fonds en propre sans avis spécialisé.</p>,
   },
   {
     id: "data",

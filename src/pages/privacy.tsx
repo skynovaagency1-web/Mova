@@ -29,7 +29,7 @@ const sections: Section[] = [
     title: "Responsable du traitement",
     body: (
       <p>
-        <Field value={COMPANY.name} label="Prénom Nom (EI)" />, exerçant sous le nom MOVA, <Field value={COMPANY.address} label="adresse" />.
+        <Field value={COMPANY.name} label="Prénom Nom (EI)" />, exerçant sous le nom MovaaGo, <Field value={COMPANY.address} label="adresse" />.
         Pour toute question sur vos données : <Field value={COMPANY.email} label="e-mail dédié aux données personnelles" />.
       </p>
     ),
@@ -69,7 +69,7 @@ const sections: Section[] = [
         />
         <p>
           <strong>Aucun document</strong> (pièce d'identité, permis, carte VTC, attestation d'assurance) n'est téléversé ni conservé : l'équipe
-          MOVA les consulte en personne ou via les services officiels et n'enregistre que le résultat.
+          MovaaGo les consulte en personne ou via les services officiels et n'enregistre que le résultat.
         </p>
       </>
     ),
@@ -87,7 +87,7 @@ const sections: Section[] = [
           <strong>Le chauffeur</strong> voit le prénom du passager et les adresses de la course.
         </li>
         <li>
-          <strong>L'équipe MOVA</strong> accède aux données nécessaires au support et aux vérifications, depuis une console protégée par une
+          <strong>L'équipe MovaaGo</strong> accède aux données nécessaires au support et aux vérifications, depuis une console protégée par une
           double authentification.
         </li>
         <li>
@@ -121,7 +121,7 @@ const sections: Section[] = [
     title: "Cookies et stockage local",
     body: (
       <p>
-        MOVA n'utilise ni cookie publicitaire ni outil de mesure d'audience. Le site et l'app enregistrent seulement sur votre appareil ce qui
+        MovaaGo n'utilise ni cookie publicitaire ni outil de mesure d'audience. Le site et l'app enregistrent seulement sur votre appareil ce qui
         est nécessaire à leur fonctionnement (votre session de connexion). Ce stockage strictement nécessaire ne demande pas de consentement.
       </p>
     ),
@@ -160,7 +160,7 @@ export default function Privacy() {
       current="confidentialite.html"
       title="Confidentialité"
       updated="2 novembre 2026"
-      intro={<p>Les données que MOVA utilise, pourquoi, qui les voit et combien de temps elles sont gardées. En clair.</p>}
+      intro={<p>Les données que MovaaGo utilise, pourquoi, qui les voit et combien de temps elles sont gardées. En clair.</p>}
       sections={sections}
     />
   );

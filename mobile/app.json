@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MOVA",
+    "name": "MovaaGo",
     "slug": "mova",
     "scheme": "mova",
     "version": "0.1.0",
@@ -28,14 +28,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "MOVA utilise votre position pour proposer votre adresse de départ."
+          "locationWhenInUsePermission": "MovaaGo utilise votre position pour proposer votre adresse de départ."
         }
       ],
       [
         "expo-image-picker",
         {
-          "cameraPermission": "MOVA utilise l'appareil photo pour votre photo de chauffeur, montrée au passager.",
-          "photosPermission": "MOVA accède à vos photos si vous choisissez votre photo de chauffeur dans la galerie.",
+          "cameraPermission": "MovaaGo utilise l'appareil photo pour votre photo de chauffeur, montrée au passager.",
+          "photosPermission": "MovaaGo accède à vos photos si vous choisissez votre photo de chauffeur dans la galerie.",
           "microphonePermission": false
         }
       ]

@@ -79,7 +79,7 @@ export function Login() {
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 textContentType={mode === "signup" ? "newPassword" : "password"}
                 placeholder={mode === "signup" ? "mot de passe (8+ caractères)" : "mot de passe"}
-                action={mode === "signin" ? { label: "Oublié", onPress: () => setNotice("Pendant le pilote, écrivez à l'équipe MOVA pour réinitialiser votre mot de passe.") } : undefined}
+                action={mode === "signin" ? { label: "Oublié", onPress: () => setNotice("Pendant le pilote, écrivez à l'équipe MovaaGo pour réinitialiser votre mot de passe.") } : undefined}
               />
 
               {!!error && <Text style={{ color: C.warning, fontWeight: "500" }}>{error}</Text>}

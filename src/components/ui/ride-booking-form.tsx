@@ -1,6 +1,6 @@
 // Adapted from 21st.dev "Ride Booking Form" by ravikatiyar162.
 // Changes: French copy, Besançon places as selects, date/time inputs, vehicle category,
-// fictitious estimate, MOVA styling. The hero copy now lives in the landing page.
+// fictitious estimate, MovaaGo styling. The hero copy now lives in the landing page.
 import * as React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, Clock } from "lucide-react";

@@ -7,8 +7,8 @@ const sections: Section[] = [
     body: (
       <>
         <p>
-          Ces conditions encadrent l'utilisation du site et de l'application MOVA, édités par <Field value={COMPANY.name} label="Prénom Nom (EI)" />{" "}
-          (« MOVA »). MOVA est une centrale de réservation de VTC : elle met en relation des passagers avec des chauffeurs VTC professionnels
+          Ces conditions encadrent l'utilisation du site et de l'application MovaaGo, édités par <Field value={COMPANY.name} label="Prénom Nom (EI)" />{" "}
+          (« MovaaGo »). MovaaGo est une centrale de réservation de VTC : elle met en relation des passagers avec des chauffeurs VTC professionnels
           et indépendants, qui réalisent les courses.
         </p>
         <p>Créer un compte ou réserver une course vaut acceptation de ces conditions.</p>
@@ -20,7 +20,7 @@ const sections: Section[] = [
     title: "Phase pilote",
     body: (
       <p>
-        MOVA est en phase pilote à Besançon et ses environs. Le service peut être limité à certaines zones et horaires, évoluer, ou être
+        MovaaGo est en phase pilote à Besançon et ses environs. Le service peut être limité à certaines zones et horaires, évoluer, ou être
         interrompu. Les fonctions présentées comme des démonstrations sur le site ne permettent pas de réserver.
       </p>
     ),
@@ -33,7 +33,7 @@ const sections: Section[] = [
         <li>Vous devez avoir 18 ans ou plus et fournir des informations exactes.</li>
         <li>Votre compte est personnel. Gardez votre mot de passe secret ; signalez-nous toute utilisation suspecte.</li>
         <li>Vous pouvez clôturer votre compte à tout moment en écrivant à <Field value={COMPANY.email} label="e-mail de contact" />.</li>
-        <li>MOVA peut suspendre un compte en cas de fraude, de comportement dangereux ou de manquement à ces conditions.</li>
+        <li>MovaaGo peut suspendre un compte en cas de fraude, de comportement dangereux ou de manquement à ces conditions.</li>
       </ul>
     ),
   },
@@ -47,7 +47,7 @@ const sections: Section[] = [
           qu'un chauffeur l'accepte ; vous voyez alors son prénom, sa photo, son véhicule et sa plaque.
         </p>
         <p>
-          Les VTC fonctionnent uniquement sur réservation préalable : un chauffeur MOVA ne peut pas être hélé dans la rue.
+          Les VTC fonctionnent uniquement sur réservation préalable : un chauffeur MovaaGo ne peut pas être hélé dans la rue.
         </p>
         <p>
           Paiement : <Todo>modalités pendant le pilote (paiement en ligne à venir)</Todo>. Une facture est disponible sur demande.
@@ -106,11 +106,11 @@ const sections: Section[] = [
     body: (
       <>
         <p>
-          Conformément au Code des transports, MOVA répond envers le passager de la bonne exécution de la course réservée par son
+          Conformément au Code des transports, MovaaGo répond envers le passager de la bonne exécution de la course réservée par son
           intermédiaire, sans préjudice de son recours contre le chauffeur. <Todo>formulation à faire valider par un avocat</Todo>
         </p>
         <p>
-          MOVA ne saurait être tenue responsable d'un retard ou d'une impossibilité dus à un cas de force majeure, aux conditions de circulation
+          MovaaGo ne saurait être tenue responsable d'un retard ou d'une impossibilité dus à un cas de force majeure, aux conditions de circulation
           ou à une information inexacte fournie par l'utilisateur. Le service peut être momentanément indisponible pour maintenance.
         </p>
       </>
@@ -138,14 +138,14 @@ const sections: Section[] = [
   {
     id: "modifications",
     title: "Modifications",
-    body: <p>MOVA peut modifier ces conditions. Les changements importants sont annoncés dans l'app avant leur entrée en vigueur.</p>,
+    body: <p>MovaaGo peut modifier ces conditions. Les changements importants sont annoncés dans l'app avant leur entrée en vigueur.</p>,
   },
   {
     id: "litiges",
     title: "Droit applicable et litiges",
     body: (
       <p>
-        Ces conditions sont soumises au droit français. En cas de désaccord, contactez d'abord MOVA par écrit. À défaut de solution, vous pouvez
+        Ces conditions sont soumises au droit français. En cas de désaccord, contactez d'abord MovaaGo par écrit. À défaut de solution, vous pouvez
         saisir gratuitement le médiateur de la consommation : <Field value={COMPANY.mediator} label="nom et site du médiateur" />. Les tribunaux
         français sont compétents.
       </p>
@@ -159,7 +159,7 @@ export default function Terms() {
       current="cgu.html"
       title="Conditions d'utilisation"
       updated="2 novembre 2026"
-      intro={<p>Les règles du service MOVA pour les passagers et les chauffeurs.</p>}
+      intro={<p>Les règles du service MovaaGo pour les passagers et les chauffeurs.</p>}
       sections={sections}
     />
   );

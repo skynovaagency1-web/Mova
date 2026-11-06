@@ -1,4 +1,4 @@
-// Adapted from 21st.dev "Footer" by meschacirung (Tailark): plain anchors instead of next/link, MOVA content.
+// Adapted from 21st.dev "Footer" by meschacirung (Tailark): plain anchors instead of next/link, MovaaGo content.
 import { Mail, MapPin } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 
@@ -37,10 +37,10 @@ export default function FooterSection() {
           </span>
         </div>
         <p className="max-w-2xl text-xs text-muted-foreground">
-          MOVA est un nom de travail, non vérifié juridiquement. Service en préparation : aucune course ni aucun paiement
+          MovaaGo est un nom de travail, non vérifié juridiquement. Service en préparation : aucune course ni aucun paiement
           n'est encore proposé. Seules les inscriptions à la liste d'attente sont enregistrées.
         </p>
-        <span className="mt-4 block font-mono text-xs text-muted-foreground">© {new Date().getFullYear()} MOVA (projet)</span>
+        <span className="mt-4 block font-mono text-xs text-muted-foreground">© {new Date().getFullYear()} MovaaGo (projet)</span>
       </div>
     </footer>
   );

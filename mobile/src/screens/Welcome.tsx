@@ -5,7 +5,7 @@ import { C, Wordmark } from "../ui";
 const GLOBE = require("../../assets/welcome-globe.jpg");
 
 // Opening scene: the camera pushes into the globe while it grows, the light washes out,
-// and the MOVA wordmark settles in. About 3.4 s, then hands over to the app.
+// and the MovaaGo wordmark settles in. About 3.4 s, then hands over to the app.
 export function Welcome({ onDone }: { onDone: () => void }) {
   const appear = React.useRef(new Animated.Value(0)).current;
   const zoom = React.useRef(new Animated.Value(0)).current;

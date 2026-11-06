@@ -97,7 +97,7 @@ export function Console({ email, onSignOut }: { email: string; onSignOut: () => 
       <header className="sticky top-0 z-40 border-b border-white/60 bg-[#f4efea]/60 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between gap-4">
           <p className="font-display text-2xl font-medium tracking-[0.14em]">
-            MOVA <span className="text-sm tracking-[0.3em] text-muted-foreground">OPS</span>
+            MovaaGo <span className="text-sm tracking-[0.3em] text-muted-foreground">OPS</span>
           </p>
           <div className="flex items-center gap-3">
             <span className="hidden font-mono text-xs text-muted-foreground sm:inline">{email}</span>

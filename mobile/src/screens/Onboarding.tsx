@@ -62,7 +62,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                 </View>
               </View>
               <Body muted>
-                MOVA validera votre compte après vérification de vos documents (carte VTC, assurance) en dehors de l'application. Ne les envoyez pas ici.
+                MovaaGo validera votre compte après vérification de vos documents (carte VTC, assurance) en dehors de l'application. Ne les envoyez pas ici.
               </Body>
             </>
           )}

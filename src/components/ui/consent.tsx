@@ -6,7 +6,7 @@ export function ConsentCheckbox({ id }: { id: string }) {
     <label htmlFor={id} className="flex items-start gap-3 text-sm text-muted-foreground">
       <input id={id} name="consent" type="checkbox" required className="mt-1 size-4 shrink-0 accent-[hsl(var(--primary))]" />
       <span>
-        J'accepte que MOVA conserve ces informations pour me contacter au sujet du lancement à Besançon. Je peux demander
+        J'accepte que MovaaGo conserve ces informations pour me contacter au sujet du lancement à Besançon. Je peux demander
         leur suppression à tout moment.{" "}
         <a href="./confidentialite.html" className="underline underline-offset-2 hover:text-foreground">
           Confidentialité

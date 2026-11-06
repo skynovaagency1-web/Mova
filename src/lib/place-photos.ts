@@ -1,5 +1,5 @@
 // Photos of the pilot places, from Wikimedia Commons (free licences, credited in the app and on the site).
-// Loaded from Wikimedia's thumbnail servers; replace with MOVA's own photos when available.
+// Loaded from Wikimedia's thumbnail servers; replace with MovaaGo's own photos when available.
 const T = "https://thumb.wikimedia.org/wikipedia/commons/thumb/";
 
 export type PlacePhoto = { uri: string; credit: string };

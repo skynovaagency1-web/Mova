@@ -62,7 +62,7 @@ export function Driver({ profile }: { profile: Profile }) {
     return (
       <View style={{ flex: 1 }}>
         {header}
-        <View style={{ padding: 20 }}><Body>Profil chauffeur introuvable. Contactez MOVA.</Body></View>
+        <View style={{ padding: 20 }}><Body>Profil chauffeur introuvable. Contactez MovaaGo.</Body></View>
       </View>
     );
   }
@@ -101,8 +101,8 @@ export function Driver({ profile }: { profile: Profile }) {
               <Title style={{ fontSize: 22 }}>Compte en attente de validation</Title>
               <Body muted>
                 {driver.photo_path
-                  ? `MOVA vérifie en personne votre identité, votre carte VTC, vos assurances et votre véhicule (${driver.vehicle}, ${driver.plate}). Vous pourrez passer en ligne dès la validation. Tirez vers le bas pour actualiser.`
-                  : "Première étape : ajoutez votre photo ci-dessous. MOVA vérifiera ensuite en personne votre identité, votre carte VTC, vos assurances et votre véhicule."}
+                  ? `MovaaGo vérifie en personne votre identité, votre carte VTC, vos assurances et votre véhicule (${driver.vehicle}, ${driver.plate}). Vous pourrez passer en ligne dès la validation. Tirez vers le bas pour actualiser.`
+                  : "Première étape : ajoutez votre photo ci-dessous. MovaaGo vérifiera ensuite en personne votre identité, votre carte VTC, vos assurances et votre véhicule."}
               </Body>
             </Card>
             {!driver.photo_path && <DriverPhoto driver={driver} onChanged={load} />}
@@ -167,7 +167,7 @@ function ActiveRide({ ride, busy, run }: { ride: Ride; busy: string | null; run:
       />
       <Text style={{ fontSize: 12, color: sharing === "sharing" ? C.muted : C.warning, paddingHorizontal: 4 }}>
         {sharing === "sharing"
-          ? "● Position partagée avec le passager. Gardez MOVA ouvert pendant la course."
+          ? "● Position partagée avec le passager. Gardez MovaaGo ouvert pendant la course."
           : sharing === "denied"
             ? "Autorisez la localisation dans Réglages pour que le passager vous voie arriver."
             : sharing === "error"

@@ -42,7 +42,7 @@ export function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 export function Wordmark({ size = 28, color = C.fg }: { size?: number; color?: string }) {
-  return <Text style={{ fontFamily: SERIF, fontSize: size, fontWeight: "400", letterSpacing: size * 0.14, color, marginRight: -size * 0.14 }}>MOVA</Text>;
+  return <Text style={{ fontFamily: SERIF, fontSize: size, fontWeight: "400", letterSpacing: size * 0.03, color, marginRight: -size * 0.03 }}>MovaaGo</Text>;
 }
 
 export function Title({ children, style }: { children: React.ReactNode; style?: object }) {

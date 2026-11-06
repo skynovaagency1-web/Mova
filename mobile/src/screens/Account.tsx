@@ -20,7 +20,7 @@ export function Account({ profile, extra }: { profile: Profile; extra?: React.Re
       {extra}
       <Card>
         <Label>Version pilote</Label>
-        <Body muted>MOVA est en test à Besançon. Pour toute question, écrivez à l'équipe MOVA.</Body>
+        <Body muted>MovaaGo est en test à Besançon. Pour toute question, écrivez à l'équipe MovaaGo.</Body>
       </Card>
       <View style={{ marginTop: 8 }}>
         <Button title="Se déconnecter" variant="outline" onPress={() => supabase.auth.signOut()} />
